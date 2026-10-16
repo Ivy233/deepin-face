@@ -8,6 +8,7 @@
 #include <sys/types.h>
 
 #include <DConfig>
+#include <QMediaDevices>
 
 DCORE_USE_NAMESPACE
 
@@ -35,9 +36,10 @@ void DriverManger::init()
     initCameraPrivacyWatch();
     m_bClaim = false;
     m_charalist = this->m_spCharaDataManger->getCharaList();
-    // 人脸能力与摄像头开关状态解耦：摄像头 FN 键关闭（设备消失）时仍上报人脸能力，
-    // 由控制中心始终展示生物认证（人脸）入口，实际操作时再上报摄像头未开启。
-    m_charaType = FACECHARATYPE;
+    // 检查摄像头是否存在：无摄像头的机型不展示人脸入口（EMPTYCHARATYPE），
+    // 有摄像头时保持 FACECHARATYPE（FN 键关闭状态不影响 CharaType，
+    // 仅影响运行时验证/录入行为，由 DConfig 隐私开关监听与看门狗处理）。
+    m_charaType = QMediaDevices::videoInputs().isEmpty() ? EMPTYCHARATYPE : FACECHARATYPE;
     m_spErollthread->moveToThread(m_eroll);
     m_spVerifyThread->moveToThread(m_verify);
     connect(m_spErollthread.data(), &ErollThread::processStatus, this, &DriverManger::processStatus);
